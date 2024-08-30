@@ -1,5 +1,20 @@
+#include <functional>
 #include <random>
 #include <iostream>
+#include <new>
+std::random_device re;
+std::mt19937 e2(re());
+std::uniform_real_distribution<> dist(-1, 1);
+
+double relu(double i) {
+	double tmp_return = 0;
+	if(i<=0){
+		tmp_return = 0;
+	}else{
+		tmp_return = i;
+	}
+	return tmp_return;
+}
 
 struct Unit {
 	double b;
@@ -13,37 +28,77 @@ struct Unit {
 	~Unit(){
 		delete[] W;
 	}
+	void printData() const{
+		for(int i =0; i< lenW; i++){
+			std::cout << W[i] << " ";
+		}
+	std::cout << std::endl;
+	}
 	
 };
 
-double forward(double x[], const Unit& u)
-{
-	float temp_res=0;
-	int lenW = u.lenW;
-	for(int i=0; i<lenW; i++)
-	{
-		temp_res += x[i]*u.W[i];
-	}	
-	temp_res += u.b;
-	return temp_res;
-};
+struct Layer {
+	Unit* arrayOfUnits;
+	int numNeurons;
+	int numW;
+	double* outputs;
+	double* inputs;
+	std::function<double(double)> forwardFunc;
 
+	Layer(int lenN, int lenW, std::function<double(double)> func) : numNeurons(lenN), numW(lenW), forwardFunc(func){
+		outputs = new double[numNeurons];
+		inputs = new double[lenW];
+		arrayOfUnits = static_cast<Unit*>(operator new[](numNeurons * sizeof(Unit)));
+		for(int i=0;i<numNeurons;i++)
+		{
+		new (&arrayOfUnits[i]) Unit(lenW);
+		for(int x =0; x<lenW; x++){
+			arrayOfUnits[i].W[x] = dist(re);
+			}
+		arrayOfUnits[i].b = dist(re);
+		}
+	}
+	~Layer(){
+		for (int i=0; i<numNeurons;i++){
+			arrayOfUnits[i].~Unit();
+		}
+		operator delete[](arrayOfUnits);
+		delete[] outputs;
+		delete[] inputs;
+	}
+	void printAll() const{
+		for (int i=0; i<numNeurons; i++){
+			arrayOfUnits[i].printData();
+		}
+	}
+	void makeInput(double vector[]) const{
+		for(int i=0; i<numW; i++){
+			inputs[i] = vector[i];
+		}
+	}
+	void forward() const{
+		for(int i=0; i<numNeurons;i++){
+			double temp_res;
+			double final_res;
+			for(int j=0; j<numW; j++)
+			{
+				temp_res += inputs[j]*arrayOfUnits[i].W[j];
+			}	
+			temp_res += arrayOfUnits[i].b;
+			final_res = forwardFunc(temp_res);	
+			outputs[i] = final_res;
+		}
+	}
+};
 int main()
 {
-	std::random_device re;
-	std::mt19937 e2(re());
 
-	std::uniform_real_distribution<> dist(-1, 1);
+	Layer* layer = new Layer(5,10,relu);
+	
+	double x[10] = {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0};
+	layer->makeInput(x);
+	layer->forward();
 
-	Unit unit1(10);
-	double x[10];
-	double w[10];
-	for(int i =0; i < 10; i++)
-	{
-		unit1.W[i] = dist(re);
-		x[i] = dist(re);
-	}
-	double first_unit_output = forward(x, unit1);
-	std::cout << first_unit_output << "\n";
+	delete layer;
 	return 0;
 }
