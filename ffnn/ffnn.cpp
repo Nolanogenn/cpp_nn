@@ -7,6 +7,16 @@ std::random_device re;
 std::mt19937 e2(re());
 std::uniform_real_distribution<> dist(-1, 1);
 
+double lce(int num_classes, double *y, double *y_hat){
+	double loss=0;
+	double toreturn =0;
+	for(int k=0; k<num_classes;k++){
+		loss += y[k]*std::log(y_hat[k]);
+	};
+	toreturn = -loss;
+	return toreturn;
+}
+
 double sigmoid(double i){
 	double e = std::exp(-i);
 	return 1/(1+e);
@@ -181,6 +191,9 @@ int main()
 	outputLayer* finalLayer = new outputLayer(2,3);
 	
 	double x[10] = {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0};
+	int num_classes=2;
+	double correct_y[2] = {1,0};	 
+
 	layer1->makeInput(x);
 	layer1->forward();
 
@@ -208,7 +221,13 @@ int main()
 		std::cout << finalOutputs[i] << " ";
 	}
 	std::cout << std::endl;
-
+	std::cout << "==========\n";
+	
+	double error = 	lce(2, correct_y, finalOutputs);
+	std::cout << error << " ";
+	std::cout << std::endl ;
+	std::cout << "==========\n";
+	
 	delete layer1;
 	delete layer2;
 	delete finalLayer;
