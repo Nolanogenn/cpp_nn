@@ -1,3 +1,4 @@
+#include <cmath>
 #include <functional>
 #include <random>
 #include <iostream>
@@ -5,6 +6,11 @@
 std::random_device re;
 std::mt19937 e2(re());
 std::uniform_real_distribution<> dist(-1, 1);
+
+double sigmoid(double i){
+	double e = std::exp(-i);
+	return 1/(1+e);
+}
 
 double relu(double i) {
 	double tmp_return = 0;
@@ -41,8 +47,8 @@ struct Layer {
 	Unit* arrayOfUnits;
 	int numNeurons;
 	int numW;
-	double* outputs;
-	double* inputs;
+	double *outputs;
+	double *inputs;
 	std::function<double(double)> forwardFunc;
 
 	Layer(int lenN, int lenW, std::function<double(double)> func) : numNeurons(lenN), numW(lenW), forwardFunc(func){
@@ -93,12 +99,28 @@ struct Layer {
 int main()
 {
 
-	Layer* layer = new Layer(5,10,relu);
+	double* Layer::*output;
+	output = &Layer::outputs;
+
+	Layer* layer1 = new Layer(5,10,relu);
+	Layer* layer2 = new Layer(3,5,sigmoid);
 	
 	double x[10] = {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0};
-	layer->makeInput(x);
-	layer->forward();
+	layer1->makeInput(x);
+	layer1->forward();
 
-	delete layer;
+	double* output1 = layer1->*output;
+
+	layer2->makeInput(output1);
+	layer2->forward();
+
+	double* output2 = layer2->*output;
+	for(int i=0;i<3;i++){
+		std::cout << output2[i] << " ";
+	}
+	std::cout << std::endl;
+
+	delete layer1;
+	delete layer2;
 	return 0;
 }
